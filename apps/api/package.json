@@ -3,6 +3,9 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "dev": "bun run ./index.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/jsonwebtoken": "^9.0.10"
@@ -11,11 +14,12 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@types/express": "^5.0.6",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
     "@repo/database": "workspace:*",
+    "@repo/jwt-comman": "workspace:*",
     "@repo/schema": "workspace:*",
-    "@repo/jwt-comman": "workspace:*"
+    "@types/express": "^5.0.6",
+    "dotenv": "^17.4.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3"
   }
 }

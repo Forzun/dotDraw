@@ -3,12 +3,11 @@ import { Router } from "express"
 import { SignupSchema, SigninSchema } from "@repo/schema"
 import { prisma } from "@repo/database"
 import jwt from "jsonwebtoken"
-import { JWT_SECRET } from "@repo/jwt-comman"
-import { escapeHTML } from "bun"
 
 const router: Router = Router()
+const JWT_SECRET = process.env.JWT_SECRET as string
 
-router.post("/singup", async (req: Request, res: Response) => {
+router.post("/signup", async (req: Request, res: Response) => {
   const { error, data } = SignupSchema.safeParse(req.body)
   if (error) {
     console.log(error)
@@ -29,7 +28,6 @@ router.post("/singup", async (req: Request, res: Response) => {
     if (existingUser) {
       res.status(401).json({
         message: "user already exist",
-        user: existingUser,
       })
       return
     }
@@ -51,7 +49,6 @@ router.post("/singup", async (req: Request, res: Response) => {
 
     res.status(200).json({
       message: "user created successfully",
-      user: user,
     })
   } catch (error) {
     res.status(403).json({
@@ -79,8 +76,8 @@ router.post("/signin", async (req: Request, res: Response) => {
     })
 
     if (!existingUser) {
-      res.status(404).json({
-        message: "Invalid credentials",
+      res.status(403).json({
+        message: "user not exit",
       })
       return
     }
@@ -91,18 +88,18 @@ router.post("/signin", async (req: Request, res: Response) => {
       },
       JWT_SECRET
     )
-
     if (!token) return
 
     res.status(200).json({
       message: "User created successfully",
-      user: existingUser,
       token: token,
     })
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error."
+    console.log(message)
     res.status(403).json({
       message: "Failed to signin user",
-      error: error,
+      error: message,
     })
   }
 })

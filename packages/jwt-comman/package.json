@@ -1,6 +1,6 @@
 {
   "name": "@repo/jwt-comman",
-  "module": "index.ts",
+  "module": "config.ts",
   "devDependencies": {
     "@types/bun": "latest"
   },

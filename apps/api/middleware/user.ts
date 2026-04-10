@@ -1,6 +1,6 @@
 import type { NextFunction, Response, Request } from "express"
 import jwt, { type JwtPayload } from "jsonwebtoken"
-import { JWT_SECRET } from "@repo/jwt-comman"
+const JWT_SECRET = process.env.JWT_SECRET as string
 
 export default function userMiddleware(
   req: Request,
