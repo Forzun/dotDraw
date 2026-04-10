@@ -1,5 +1,6 @@
 import type { NextFunction, Response, Request } from "express"
-import jwt from "jsonwebtoken"
+import jwt, { type JwtPayload } from "jsonwebtoken"
+import { JWT_SECRET } from "@repo/jwt-comman"
 
 export default function userMiddleware(
   req: Request,
@@ -16,6 +17,17 @@ export default function userMiddleware(
     return
   }
   try {
+    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload
+
+    if (decoded.userId) {
+      req.userId = decoded.userId
+      next()
+    } else {
+      res.status(403).json({
+        message: "something wrong with",
+      })
+      return
+    }
   } catch (error) {
     console.log(error)
     res.status(403).json({
