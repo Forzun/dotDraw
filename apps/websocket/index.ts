@@ -1,40 +1,56 @@
-import type { ServerWebSocket } from "bun"
-import liveUserCount from "./utils/room"
+import { sha, type ServerWebSocket } from "bun"
+import liveUserCount from "./utils/live-user-count"
+import getUserId from "./utils/get-userId"
+import { prisma } from "@repo/database"
 
+type WsData = {
+  userId: string
+}
 interface User {
-  name: string
+  userId: string
   room: string[]
-  ws: ServerWebSocket
+  ws: ServerWebSocket<WsData>
 }
 
 const users: User[] = []
 
-let allSocket: Record<string, { name: string; ws: ServerWebSocket[] }> = {}
-const server = Bun.serve({
+let allSocket: Record<string, { userId: string; ws: ServerWebSocket[] }> = {}
+
+const server = Bun.serve<WsData>({
   port: 8080,
   fetch(req, server) {
-    const success = server.upgrade(req)
-    if (success) {
-      return undefined
-    }
-  },
+    const url = new URL(req.url)
+    const token = url.searchParams.get("token")
 
+    if (!token) {
+      return new Response("not token", { status: 400 })
+    }
+    const userId = getUserId(token)
+
+    server.upgrade(req, {
+      data: {
+        userId: userId,
+      },
+    })
+
+    return new Response("Upgrade failed", { status: 500 })
+  },
   websocket: {
     open(ws) {
       console.log("client connect")
       users.push({
-        name: "",
+        userId: "",
         room: [],
         ws: ws,
       })
       ws.send("welcome!")
     },
 
-    message(ws, message) {
+    async message(ws, message) {
       try {
         const row = message.toString()
         const data = JSON.parse(row)
-        console.log("Received message", data)
+        const userId = ws.data.userId
 
         if (data.type === "join_room") {
           const user = users.find((user) => user.ws === ws)
@@ -43,7 +59,7 @@ const server = Bun.serve({
             return
           }
 
-          user.name = data.payload.name as string
+          user.userId = data.payload.userId as string
           const roomId = data.payload.roomId as string
 
           if (!user.room.includes(roomId)) {
@@ -66,9 +82,17 @@ const server = Bun.serve({
 
           const message = {
             message: data.payload.message,
-            name: data.payload.name,
+            userId: data.payload.userId,
             count: count,
           }
+
+          await prisma.shape.create({
+            data: {
+              userId: userId,
+              shape: data.payload.message,
+              roomId: data.payload.userId,
+            },
+          })
 
           users
             .filter((user) => {

@@ -2,9 +2,11 @@ import type { ServerWebSocket } from "bun"
 
 export default function liveUserCount(
   users: {
-    name: string
+    userId: string
     room: string[]
-    ws: ServerWebSocket
+    ws: ServerWebSocket<{
+      userId: string
+    }>
   }[],
   roomId: string
 ) {
