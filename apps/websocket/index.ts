@@ -1,4 +1,4 @@
-import { sha, type ServerWebSocket } from "bun"
+import { type ServerWebSocket } from "bun"
 import liveUserCount from "./utils/live-user-count"
 import getUserId from "./utils/get-userId"
 import { prisma } from "@repo/database"
