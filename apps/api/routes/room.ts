@@ -26,7 +26,6 @@ router.post(
           adminId: req.userId!,
         },
       })
-
       if (!room) {
         res.status(403).json({
           message: "unable to create room",

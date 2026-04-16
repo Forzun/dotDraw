@@ -1,5 +1,4 @@
 "use client"
-import { stat } from "fs/promises"
 import { useEffect, useRef, useState } from "react"
 
 type Shape = "rect" | "pencil" | "circle"
