@@ -19,16 +19,23 @@ type Shape =
 
 export class Game {
   private canvas: HTMLCanvasElement
-  private Shape: Shape[] = []
+  private Shapes: Shape[] = []
   private currentShape: Shape | null = null
   private isDrowing = false
   private startX = 0
   private startY = 0
+  private ctx: CanvasRenderingContext2D | null = null
+  private roomId: string
+  private socket: string
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, roomId: string, socket: string) {
     this.canvas = canvas
-    // this.roomId = roomId
-    // this.socket = socket
+    this.roomId = roomId
+    this.socket = socket
+    this.ctx = this.canvas.getContext("2d")
+    if (!this.ctx) return
+    this.ctx.fillRect(0, 0, canvas.width, canvas.height)
+    this.ctx.strokeStyle = "white"
     canvas.addEventListener("mousedown", this.mouseDownHandler)
     canvas.addEventListener("mousemove", this.mouseMovehandler)
     canvas.addEventListener("mouseup", this.mouseUpHandler)
@@ -63,7 +70,7 @@ export class Game {
       return
     }
 
-    this.Shape.push(this.currentShape)
+    this.Shapes.push(this.currentShape)
 
     this.currentShape = null
     this.isDrowing = false
@@ -88,25 +95,26 @@ export class Game {
   }
 
   draw = () => {
-    if (!this.currentShape) {
+    if (!this.currentShape || !this.ctx) {
       return
     }
-    const ctx = this.canvas.getContext("2d")
-    if (ctx == null) return
 
-    ctx.fillStyle = "black"
-    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
+    this.ctx.fillStyle = "black"
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
 
-    ctx.strokeStyle = "white"
-    ctx.lineWidth = 1
+    this.ctx.strokeStyle = "white"
+    this.ctx.lineWidth = 1
 
-    ctx.beginPath()
-    ctx.rect(
+    this.ctx.beginPath()
+    this.Shapes.forEach((shape) => {
+      this.ctx?.rect(shape.x, shape.y, shape.width, shape.height)
+    })
+    this.ctx.rect(
       this.startX,
       this.startY,
       this.currentShape?.width,
       this.currentShape?.height
     )
-    ctx.stroke()
+    this.ctx.stroke()
   }
 }

@@ -18,7 +18,7 @@ export default function Page() {
 
     const canvas = canvasRef.current
     if (canvas == null) return
-    const game = new Game(canvas)
+    const game = new Game(canvas, "121", "fsjkadlf")
 
     return () => {
       game.destory()
@@ -27,7 +27,11 @@ export default function Page() {
 
   return (
     <div className="relative h-screen w-full">
-      <canvas ref={canvasRef} width={1000} height={500}></canvas>
+      <canvas
+        ref={canvasRef}
+        width={dimensions.width}
+        height={dimensions.height}
+      ></canvas>
     </div>
   )
 }
