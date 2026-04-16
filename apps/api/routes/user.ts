@@ -91,7 +91,7 @@ router.post("/signin", async (req: Request, res: Response) => {
     if (!token) return
 
     res.status(200).json({
-      message: "User created successfully",
+      message: "User signed in successfully",
       token: token,
     })
   } catch (error) {

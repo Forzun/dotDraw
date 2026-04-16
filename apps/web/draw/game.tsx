@@ -1,5 +1,3 @@
-import { GitPullRequestArrowIcon, WindArrowDown } from "lucide-react"
-
 type Shape =
   | {
       type: "rect"
@@ -36,9 +34,7 @@ export class Game {
     if (!this.ctx) return
     this.ctx.fillRect(0, 0, canvas.width, canvas.height)
     this.ctx.strokeStyle = "white"
-    canvas.addEventListener("mousedown", this.mouseDownHandler)
-    canvas.addEventListener("mousemove", this.mouseMovehandler)
-    canvas.addEventListener("mouseup", this.mouseUpHandler)
+    this.eventHandlers()
   }
 
   destory() {
@@ -116,5 +112,11 @@ export class Game {
       this.currentShape?.height
     )
     this.ctx.stroke()
+  }
+
+  eventHandlers = () => {
+    this.canvas.addEventListener("mousedown", this.mouseDownHandler)
+    this.canvas.addEventListener("mousemove", this.mouseMovehandler)
+    this.canvas.addEventListener("mouseup", this.mouseUpHandler)
   }
 }
