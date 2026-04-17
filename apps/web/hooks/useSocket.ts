@@ -1,11 +1,21 @@
+import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 
 export default function useSocket() {
   const [connected, setConnected] = useState<boolean>(false)
   const socket = useRef<WebSocket | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
-    const ws = new WebSocket(`ws://localhost:8080?token=`)
+    const token = localStorage.getItem("token")
+
+    if (token === null || token === undefined) {
+      console.log("No token found in local storage")
+      router.push("/signup")
+      return
+    }
+
+    const ws = new WebSocket(`ws://localhost:8080?token=${token}`)
 
     ws.onopen = () => {
       setConnected(true)
@@ -16,11 +26,13 @@ export default function useSocket() {
       return
     }
 
+    console.log("connected to server")
     socket.current = ws
+
     return () => {
       ws.close()
     }
   }, [])
 
-  return { socket, connected }
+  return { socket, connected, socketRef: socket }
 }

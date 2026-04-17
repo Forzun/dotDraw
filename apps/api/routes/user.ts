@@ -1,6 +1,6 @@
 import type { Request, Response } from "express"
 import { Router } from "express"
-import { SignupSchema, SigninSchema } from "@repo/schema"
+import { SigninSchema } from "@repo/schema"
 import { prisma } from "@repo/database"
 import jwt from "jsonwebtoken"
 

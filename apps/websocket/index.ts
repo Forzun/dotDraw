@@ -39,7 +39,7 @@ const server = Bun.serve<WsData>({
     open(ws) {
       console.log("client connect")
       users.push({
-        userId: "",
+        userId: ws.data.userId,
         room: [],
         ws: ws,
       })
@@ -50,16 +50,15 @@ const server = Bun.serve<WsData>({
       try {
         const row = message.toString()
         const data = JSON.parse(row)
-        const userId = ws.data.userId
 
         if (data.type === "join_room") {
           const user = users.find((user) => user.ws === ws)
+
           if (!user) {
             console.log("user not found")
             return
           }
 
-          user.userId = data.payload.userId as string
           const roomId = data.payload.roomId as string
 
           if (!user.room.includes(roomId)) {
@@ -76,13 +75,14 @@ const server = Bun.serve<WsData>({
 
         if (data.type === "chat") {
           const currentUser = users.find((user) => user.ws === ws)
+          const userId = ws.data.userId
           if (!currentUser) return
 
           const count = liveUserCount(users, data.payload.roomId)
 
           const message = {
             message: data.payload.message,
-            userId: data.payload.userId,
+            userId: userId,
             count: count,
           }
 

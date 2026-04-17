@@ -24,9 +24,9 @@ export class Game {
   private startY = 0
   private ctx: CanvasRenderingContext2D | null = null
   private roomId: string
-  private socket: string
+  private socket: WebSocket
 
-  constructor(canvas: HTMLCanvasElement, roomId: string, socket: string) {
+  constructor(canvas: HTMLCanvasElement, roomId: string, socket: WebSocket) {
     this.canvas = canvas
     this.roomId = roomId
     this.socket = socket
