@@ -1,4 +1,6 @@
-type Shape =
+import allCanvas from "./getShaps"
+
+export type Shape =
   | {
       type: "rect"
       x: number
@@ -9,6 +11,15 @@ type Shape =
   | {
       type: "circle"
       radius: number
+      x: number
+      y: number
+      width: number
+      height: number
+    }
+  | {
+      type: "pencil"
+      startX: number
+      startY: number
       x: number
       y: number
       width: number
@@ -25,9 +36,18 @@ export class Game {
   private ctx: CanvasRenderingContext2D | null = null
   private roomId: string
   private socket: WebSocket
+  private shapeType: "rect" | "circle" | "pencil"
+  private strokeStyle: string
+  private lineWidth: number
 
-  constructor(canvas: HTMLCanvasElement, roomId: string, socket: WebSocket) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    roomId: string,
+    socket: WebSocket,
+    shapeType: "rect" | "circle" | "pencil"
+  ) {
     this.canvas = canvas
+    this.shapeType = shapeType
     this.roomId = roomId
     this.socket = socket
     this.ctx = this.canvas.getContext("2d")
@@ -35,6 +55,7 @@ export class Game {
     this.ctx.fillRect(0, 0, canvas.width, canvas.height)
     this.ctx.strokeStyle = "white"
     this.eventHandlers()
+    this.lineWidth = 1
   }
 
   destory() {
@@ -52,12 +73,35 @@ export class Game {
     this.startX = x
     this.startY = y
 
-    this.currentShape = {
-      type: "rect",
-      x: x,
-      y: y,
-      width: 0,
-      height: 0,
+    if (this.shapeType === "rect") {
+      this.currentShape = {
+        type: "rect",
+        x,
+        y,
+        width: 0,
+        height: 0,
+      }
+    }
+    if (this.shapeType === "circle") {
+      this.currentShape = {
+        type: "circle",
+        x,
+        y,
+        radius: 0,
+        width: 0,
+        height: 0,
+      }
+    }
+    if (this.shapeType === "pencil") {
+      this.currentShape = {
+        type: "pencil",
+        startX: x,
+        startY: y,
+        width: 0,
+        height: 0,
+        x: 0,
+        y: 0,
+      }
     }
   }
 
@@ -86,11 +130,13 @@ export class Game {
 
     this.currentShape.width = width
     this.currentShape.height = height
+    this.currentShape.x = x
+    this.currentShape.y = y
 
-    this.draw()
+    this.draw(x, y)
   }
 
-  draw = () => {
+  draw = (x: number, y: number) => {
     if (!this.currentShape || !this.ctx) {
       return
     }
@@ -102,16 +148,45 @@ export class Game {
     this.ctx.lineWidth = 1
 
     this.ctx.beginPath()
-    this.Shapes.forEach((shape) => {
-      this.ctx?.rect(shape.x, shape.y, shape.width, shape.height)
-    })
-    this.ctx.rect(
-      this.startX,
-      this.startY,
-      this.currentShape?.width,
-      this.currentShape?.height
-    )
+
+    if (this.currentShape) {
+      allCanvas({
+        Shapes: this.Shapes,
+        ctx: this.ctx!,
+      })
+    }
+
+    this.ctx.beginPath()
+    this.ctx.moveTo(250, 100)
+    this.ctx.lineTo(400, 250)
+    this.ctx.lineTo(250, 400)
+    this.ctx.lineTo(100, 250)
+    this.ctx.closePath()
     this.ctx.stroke()
+
+    if (this.shapeType == "rect") {
+      this.ctx.rect(
+        this.startX,
+        this.startY,
+        this.currentShape?.width,
+        this.currentShape?.height
+      )
+      this.ctx.stroke()
+    } else if (this.shapeType === "circle") {
+      const dx = x - this.startX
+      const dy = y - this.startY
+      const radius = Math.sqrt(dx * dx + dy * dy)
+      this.ctx.beginPath()
+      this.ctx.arc(this.startX, this.startY, radius, 0, 2 * Math.PI)
+      this.ctx.stroke()
+    } else {
+      this.ctx.beginPath()
+      this.ctx.moveTo(this.startX, this.startY)
+      this.ctx.lineTo(x, y)
+      this.ctx.strokeStyle = "white"
+      this.ctx.lineWidth = this.lineWidth
+      this.ctx.stroke()
+    }
   }
 
   eventHandlers = () => {

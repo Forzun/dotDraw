@@ -18,7 +18,7 @@ export default function DrowCanva({
 
     canvas.width = window.innerWidth
     canvas.height = window.innerHeight
-    const game = new Game(canvas, roomId, socket)
+    const game = new Game(canvas, roomId, socket, "pencil")
 
     return () => {
       game.destory()

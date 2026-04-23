@@ -28,11 +28,12 @@ export default function useSocket() {
 
     console.log("connected to server")
     socket.current = ws
+    setConnected(true)
 
     return () => {
       ws.close()
     }
-  }, [])
+  }, [router])
 
   return { socket, connected, socketRef: socket }
 }
