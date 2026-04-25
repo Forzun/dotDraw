@@ -23,7 +23,7 @@ export default function DrowCanva({
     return () => {
       game.destory()
     }
-  }, [])
+  }, [socket, roomId])
 
   return (
     <div className="relative h-screen w-full">

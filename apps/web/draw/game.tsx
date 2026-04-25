@@ -179,7 +179,7 @@ export class Game {
       this.ctx.beginPath()
       this.ctx.arc(this.startX, this.startY, radius, 0, 2 * Math.PI)
       this.ctx.stroke()
-    } else {
+    } else if (this.shapeType == "pencil") {
       this.ctx.beginPath()
       this.ctx.moveTo(this.startX, this.startY)
       this.ctx.lineTo(x, y)
