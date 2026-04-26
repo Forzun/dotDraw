@@ -34,7 +34,6 @@ export default function Socket({ roomId }: { roomId: string }) {
 
   return (
     <div>
-      {connected ? <p>Connected to room {roomId}</p> : <p>Loading...</p>}
       {socket.current && <DrowCanva socket={socket.current} roomId={roomId} />}
     </div>
   )

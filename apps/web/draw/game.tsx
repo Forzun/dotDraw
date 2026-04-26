@@ -1,3 +1,4 @@
+import { ShapeType } from "@/types/shape-types"
 import allCanvas from "./getShaps"
 
 export type Shape =
@@ -25,6 +26,15 @@ export type Shape =
       width: number
       height: number
     }
+  | {
+      type: "diamond"
+      startX?: number
+      startY?: number
+      x: number
+      y: number
+      width: number
+      height: number
+    }
 
 export class Game {
   private canvas: HTMLCanvasElement
@@ -36,7 +46,7 @@ export class Game {
   private ctx: CanvasRenderingContext2D | null = null
   private roomId: string
   private socket: WebSocket
-  private shapeType: "rect" | "circle" | "pencil"
+  private shapeType: ShapeType
   private strokeStyle: string
   private lineWidth: number
 
@@ -44,7 +54,7 @@ export class Game {
     canvas: HTMLCanvasElement,
     roomId: string,
     socket: WebSocket,
-    shapeType: "rect" | "circle" | "pencil"
+    shapeType: ShapeType
   ) {
     this.canvas = canvas
     this.shapeType = shapeType
@@ -52,6 +62,7 @@ export class Game {
     this.socket = socket
     this.ctx = this.canvas.getContext("2d")
     if (!this.ctx) return
+    this.ctx.fillStyle = "#171717"
     this.ctx.fillRect(0, 0, canvas.width, canvas.height)
     this.ctx.strokeStyle = "white"
     this.eventHandlers()
@@ -103,6 +114,15 @@ export class Game {
         y: 0,
       }
     }
+    if (this.shapeType === "diamond") {
+      this.currentShape = {
+        type: "diamond",
+        x,
+        y,
+        width: 0,
+        height: 0,
+      }
+    }
   }
 
   mouseUpHandler = (e: MouseEvent) => {
@@ -130,8 +150,6 @@ export class Game {
 
     this.currentShape.width = width
     this.currentShape.height = height
-    this.currentShape.x = x
-    this.currentShape.y = y
 
     this.draw(x, y)
   }
@@ -141,10 +159,8 @@ export class Game {
       return
     }
 
-    this.ctx.fillStyle = "black"
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
 
-    this.ctx.strokeStyle = "white"
     this.ctx.lineWidth = 1
 
     this.ctx.beginPath()
@@ -156,14 +172,7 @@ export class Game {
       })
     }
 
-    this.ctx.beginPath()
-    this.ctx.moveTo(250, 100)
-    this.ctx.lineTo(400, 250)
-    this.ctx.lineTo(250, 400)
-    this.ctx.lineTo(100, 250)
-    this.ctx.closePath()
-    this.ctx.stroke()
-
+    console.log(this.shapeType)
     if (this.shapeType == "rect") {
       this.ctx.rect(
         this.startX,
@@ -172,7 +181,7 @@ export class Game {
         this.currentShape?.height
       )
       this.ctx.stroke()
-    } else if (this.shapeType === "circle") {
+    } else if (this.shapeType == "circle") {
       const dx = x - this.startX
       const dy = y - this.startY
       const radius = Math.sqrt(dx * dx + dy * dy)
@@ -183,8 +192,19 @@ export class Game {
       this.ctx.beginPath()
       this.ctx.moveTo(this.startX, this.startY)
       this.ctx.lineTo(x, y)
-      this.ctx.strokeStyle = "white"
       this.ctx.lineWidth = this.lineWidth
+      this.ctx.stroke()
+    } else if (this.shapeType == "diamond") {
+      console.log("diamond is working or not")
+      const width = this.startX - x
+      const height = this.startY - y
+
+      this.ctx.beginPath()
+      this.ctx.moveTo(x + width / 2, y)
+      this.ctx.lineTo(x + width, y + height / 2)
+      this.ctx.lineTo(x + width / 2, y + height)
+      this.ctx.lineTo(x, y + height / 2)
+      this.ctx.closePath()
       this.ctx.stroke()
     }
   }
