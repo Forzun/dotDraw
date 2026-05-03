@@ -39,6 +39,7 @@ export default function DrowCanva({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [currentShape, setCurrentShape] = useState<ShapeType>("default")
+  let currentGameRef = useRef<Game | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -47,13 +48,16 @@ export default function DrowCanva({
     canvas.width = window.innerWidth
     canvas.height = window.innerHeight
 
-    console.log(currentShape)
-    const game = new Game(canvas, roomId, socket, currentShape)
+    currentGameRef.current = new Game(canvas, roomId, socket, currentShape)
 
     return () => {
-      game.destory()
+      currentGameRef.current?.destory()
     }
-  }, [socket, roomId, currentShape])
+  }, [socket, roomId])
+
+  useEffect(() => {
+    currentGameRef.current?.setShape(currentShape)
+  }, [currentShape])
 
   return (
     <div className="relative h-screen w-full">

@@ -69,6 +69,10 @@ export class Game {
     this.lineWidth = 1
   }
 
+  setShape(shape: ShapeType) {
+    this.shapeType = shape
+  }
+
   destory() {
     this.canvas.removeEventListener("mousedown", this.mouseDownHandler)
     this.canvas.removeEventListener("mousemove", this.mouseMovehandler)
@@ -87,8 +91,8 @@ export class Game {
     if (this.shapeType === "rect") {
       this.currentShape = {
         type: "rect",
-        x,
-        y,
+        x: this.startX,
+        y: this.startY,
         width: 0,
         height: 0,
       }
@@ -150,7 +154,6 @@ export class Game {
 
     this.currentShape.width = width
     this.currentShape.height = height
-
     this.draw(x, y)
   }
 
@@ -162,15 +165,7 @@ export class Game {
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
 
     this.ctx.lineWidth = 1
-
     this.ctx.beginPath()
-
-    if (this.currentShape) {
-      allCanvas({
-        Shapes: this.Shapes,
-        ctx: this.ctx!,
-      })
-    }
 
     console.log(this.shapeType)
     if (this.shapeType == "rect") {
@@ -194,6 +189,8 @@ export class Game {
       this.ctx.lineTo(x, y)
       this.ctx.lineWidth = this.lineWidth
       this.ctx.stroke()
+      this.currentShape.x = x
+      this.currentShape.y = y
     } else if (this.shapeType == "diamond") {
       console.log("diamond is working or not")
       const width = this.startX - x
@@ -206,6 +203,13 @@ export class Game {
       this.ctx.lineTo(x, y + height / 2)
       this.ctx.closePath()
       this.ctx.stroke()
+    }
+
+    if (this.currentShape) {
+      allCanvas({
+        Shapes: this.Shapes,
+        ctx: this.ctx!,
+      })
     }
   }
 

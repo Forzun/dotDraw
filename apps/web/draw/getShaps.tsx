@@ -19,6 +19,7 @@ export default function allCanvas({
     } else if (shape.type === "pencil") {
       ctx.moveTo(shape.startX, shape.startY)
       ctx.lineTo(shape.x, shape.y)
+      console.log(shape.startX, shape.startY, shape.x, shape.y)
     } else if (shape.type === "diamond") {
       ctx.moveTo(shape.x + shape.width / 2, shape.y)
       ctx.lineTo(shape.x + shape.width, shape.y + shape.height / 2)
