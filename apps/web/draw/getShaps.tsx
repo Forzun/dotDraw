@@ -7,6 +7,7 @@ export default function allCanvas({
   Shapes: Shape[]
   ctx: CanvasRenderingContext2D
 }) {
+  console.log("log here", Shapes)
   Shapes.forEach((shape) => {
     ctx.beginPath()
     ctx.strokeStyle = "white"
@@ -16,6 +17,7 @@ export default function allCanvas({
       ctx.rect(shape.x, shape.y, shape.width, shape.height)
     } else if (shape.type === "circle") {
       ctx.arc(shape.x, shape.y, shape.radius, 0, 2 * Math.PI)
+      console.log("shape:", shape.x, shape.y, shape.radius)
     } else if (shape.type === "pencil") {
       ctx.moveTo(shape.startX, shape.startY)
       ctx.lineTo(shape.x, shape.y)

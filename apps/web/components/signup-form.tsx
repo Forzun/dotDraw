@@ -32,6 +32,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
       return
     }
 
+    console.log("Signup form submitted:", { name, email, password })
     try {
       const response = await fetch("http://localhost:3000/user/signup", {
         method: "POST",

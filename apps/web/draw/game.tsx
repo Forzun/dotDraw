@@ -1,5 +1,6 @@
 import { ShapeType } from "@/types/shape-types"
 import allCanvas from "./getShaps"
+import renderSocket, { getExistingShape } from "./socketShaps"
 
 export type Shape =
   | {
@@ -49,6 +50,7 @@ export class Game {
   private shapeType: ShapeType
   private strokeStyle: string
   private lineWidth: number
+  private remoteShapes: Shape[] = []
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -67,6 +69,46 @@ export class Game {
     this.ctx.strokeStyle = "white"
     this.eventHandlers()
     this.lineWidth = 1
+    this.loadInitialShapes()
+    this.initSocket()
+  }
+
+  private initSocket() {
+    this.socket.addEventListener("message", (event) => {
+      if (!this.ctx) {
+        return
+      }
+      const message = JSON.parse(event.data)
+      if (message.type == "chat") {
+        const parsed = JSON.parse(message.message)
+        this.remoteShapes.push(parsed.shape)
+        allCanvas({
+          Shapes: this.remoteShapes,
+          ctx: this.ctx,
+        })
+      }
+    })
+    this.redraw()
+  }
+
+  private async loadInitialShapes() {
+    const shapes = await getExistingShape(this.roomId)
+
+    if (shapes) {
+      this.remoteShapes = shapes
+    }
+    this.redraw()
+  }
+
+  private redraw() {
+    if (!this.ctx) return
+    this.ctx.fillStyle = "#171717"
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
+
+    allCanvas({
+      Shapes: this.remoteShapes,
+      ctx: this.ctx,
+    })
   }
 
   setShape(shape: ShapeType) {
@@ -136,6 +178,18 @@ export class Game {
 
     this.Shapes.push(this.currentShape)
 
+    if (!this.ctx) {
+      return
+    }
+
+    renderSocket({
+      roomId: this.roomId,
+      shape: this.currentShape,
+      ctx: this.ctx,
+      socket: this.socket,
+      remoteShapes: this.remoteShapes,
+    })
+
     this.currentShape = null
     this.isDrowing = false
   }
@@ -158,59 +212,53 @@ export class Game {
   }
 
   draw = (x: number, y: number) => {
-    if (!this.currentShape || !this.ctx) {
-      return
-    }
+    if (!this.ctx) return
 
+    this.ctx.fillStyle = "#171717"
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
 
-    this.ctx.lineWidth = 1
+    allCanvas({
+      Shapes: [...this.Shapes, ...this.remoteShapes],
+      ctx: this.ctx,
+    })
+
+    if (!this.currentShape) return
+
     this.ctx.beginPath()
 
-    console.log(this.shapeType)
-    if (this.shapeType == "rect") {
+    if (this.currentShape.type === "rect") {
       this.ctx.rect(
         this.startX,
         this.startY,
-        this.currentShape?.width,
-        this.currentShape?.height
+        this.currentShape.width,
+        this.currentShape.height
       )
-      this.ctx.stroke()
-    } else if (this.shapeType == "circle") {
+    } else if (this.currentShape.type === "circle") {
       const dx = x - this.startX
       const dy = y - this.startY
       const radius = Math.sqrt(dx * dx + dy * dy)
-      this.ctx.beginPath()
+
+      this.currentShape.radius = radius
+
       this.ctx.arc(this.startX, this.startY, radius, 0, 2 * Math.PI)
-      this.ctx.stroke()
-    } else if (this.shapeType == "pencil") {
-      this.ctx.beginPath()
+    } else if (this.currentShape.type === "pencil") {
       this.ctx.moveTo(this.startX, this.startY)
       this.ctx.lineTo(x, y)
-      this.ctx.lineWidth = this.lineWidth
-      this.ctx.stroke()
+
       this.currentShape.x = x
       this.currentShape.y = y
-    } else if (this.shapeType == "diamond") {
-      console.log("diamond is working or not")
-      const width = this.startX - x
-      const height = this.startY - y
+    } else if (this.currentShape.type === "diamond") {
+      const width = x - this.startX
+      const height = y - this.startY
 
-      this.ctx.beginPath()
-      this.ctx.moveTo(x + width / 2, y)
-      this.ctx.lineTo(x + width, y + height / 2)
-      this.ctx.lineTo(x + width / 2, y + height)
-      this.ctx.lineTo(x, y + height / 2)
+      this.ctx.moveTo(this.startX + width / 2, this.startY)
+      this.ctx.lineTo(this.startX + width, this.startY + height / 2)
+      this.ctx.lineTo(this.startX + width / 2, this.startY + height)
+      this.ctx.lineTo(this.startX, this.startY + height / 2)
       this.ctx.closePath()
-      this.ctx.stroke()
     }
 
-    if (this.currentShape) {
-      allCanvas({
-        Shapes: this.Shapes,
-        ctx: this.ctx!,
-      })
-    }
+    this.ctx.stroke()
   }
 
   eventHandlers = () => {

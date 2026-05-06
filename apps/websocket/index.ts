@@ -43,7 +43,6 @@ const server = Bun.serve<WsData>({
         room: [],
         ws: ws,
       })
-      ws.send("welcome!")
     },
 
     async message(ws, message) {
@@ -81,16 +80,21 @@ const server = Bun.serve<WsData>({
           const count = liveUserCount(users, data.payload.roomId)
 
           const message = {
+            type: data.type,
             message: data.payload.message,
             userId: userId,
             count: count,
           }
 
+          const room = await prisma.room.findFirst({
+            where: { slug: data.payload.roomId },
+          })
+
           await prisma.shape.create({
             data: {
               userId: userId,
               shape: data.payload.message,
-              roomId: data.payload.userId,
+              roomId: room?.id!,
             },
           })
 

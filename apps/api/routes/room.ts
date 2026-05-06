@@ -3,6 +3,7 @@ import { Router } from "express"
 import userMiddleware from "../middleware/user"
 import { RoomSchema } from "@repo/schema"
 import { prisma } from "@repo/database"
+import { sha } from "bun"
 
 const router = Router()
 
@@ -61,6 +62,41 @@ router.get("/all", userMiddleware, async (req: Request, res: Response) => {
 
     res.status(200).json({
       rooms: rooms,
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error"
+    console.log(message)
+    res.status(403).json({
+      message: "Failed to fetch rooms",
+      error: message,
+    })
+  }
+})
+
+router.get("/:id", async (req: Request, res: Response) => {
+  try {
+    const roomId = JSON.stringify(req.params.id)
+
+    const room = await prisma.room.findFirst({
+      where: { slug: roomId },
+    })
+
+    const shapes = await prisma.shape.findMany({
+      where: {
+        roomId: room?.id,
+      },
+      orderBy: {
+        id: "desc",
+      },
+      take: 50,
+    })
+
+    if (!shapes) {
+      return null
+    }
+
+    res.status(200).json({
+      shapes: shapes,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error"
