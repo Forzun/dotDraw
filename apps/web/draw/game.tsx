@@ -51,8 +51,8 @@ export class Game {
   private strokeStyle: string
   private lineWidth: number
   private remoteShapes: Shape[] = []
-  private offsetX: number = 0
-  private offsetY: number = 0
+  private panY: number = 0
+  private panX: number = 0
   private zoom: number = 1
   private SCALE_FACTOR = 0.1
 
@@ -75,7 +75,6 @@ export class Game {
     this.lineWidth = 1
     this.loadInitialShapes()
     this.initSocket()
-    this.zoomDrow()
   }
 
   private initSocket() {
@@ -87,13 +86,9 @@ export class Game {
       if (message.type == "chat") {
         const parsed = JSON.parse(message.message)
         this.remoteShapes.push(parsed.shape)
-        allCanvas({
-          Shapes: this.remoteShapes,
-          ctx: this.ctx,
-        })
+        this.redraw()
       }
     })
-    this.redraw()
   }
 
   private async loadInitialShapes() {
@@ -107,11 +102,16 @@ export class Game {
 
   private redraw() {
     if (!this.ctx) return
+
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0)
     this.ctx.fillStyle = "#171717"
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
 
+    this.ctx.translate(this.panX, this.panY)
+    this.ctx.scale(this.zoom, this.zoom)
+
     allCanvas({
-      Shapes: this.remoteShapes,
+      Shapes: [...this.Shapes, ...this.remoteShapes],
       ctx: this.ctx,
     })
   }
@@ -124,54 +124,18 @@ export class Game {
     this.canvas.removeEventListener("mousedown", this.mouseDownHandler)
     this.canvas.removeEventListener("mousemove", this.mouseMovehandler)
     this.canvas.removeEventListener("mouseup", this.mouseUpHandler)
-  }
-
-  mouseZoom = (e: WheelEvent) => {
-    e.preventDefault()
-
-    const rect = this.canvas.getBoundingClientRect()
-    const mouseX = e.clientX - rect.left
-    const mouseY = e.clientY - rect.top
-
-    const direction = e.deltaY > 0 ? -1 : 1
-    const zoomChange = direction * this.SCALE_FACTOR
-
-    const newZoom = Math.max(0.1, Math.min(this.zoom + zoomChange, 10))
-
-    const zoomDiff = newZoom - this.zoom
-
-    this.offsetX = mouseX - (mouseX - this.offsetX) * (newZoom / this.zoom)
-    this.offsetY = mouseY - (mouseY - this.offsetY) * (newZoom / this.zoom)
-
-    this.zoom = newZoom
-
-    this.zoomDrow()
-  }
-
-  zoomDrow() {
-    if (this.ctx == null) {
-      return
-    }
-
-    this.ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height)
-
-    // Reset transform
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0)
-
-    // Apply zoom and pan
-    this.ctx.translate(this.offsetX, this.offsetY)
-    this.ctx.scale(this.zoom, this.zoom)
-
-    // Draw content (example: a centered square)
-    this.ctx.fillStyle = "blue"
-    this.ctx.fillRect(-50, -50, 100, 100)
+    this.canvas.removeEventListener("wheel", this.handleWheel)
   }
 
   mouseDownHandler = (e: MouseEvent) => {
     this.isDrowing = true
     const rect = this.canvas.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+
+    const screenX = e.clientX - rect.left
+    const screenY = e.clientY - rect.top
+
+    const x = (screenX - this.panX) / this.zoom
+    const y = (screenY - this.panY) / this.zoom
 
     this.startX = x
     this.startY = y
@@ -222,11 +186,11 @@ export class Game {
       return
     }
 
-    this.Shapes.push(this.currentShape)
-
     if (!this.ctx) {
       return
     }
+
+    this.Shapes.push(this.currentShape)
 
     renderSocket({
       roomId: this.roomId,
@@ -244,11 +208,13 @@ export class Game {
     if (!this.isDrowing || !this.currentShape) {
       return
     }
-
     const rect = this.canvas.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
 
+    const screenX = e.clientX - rect.left
+    const screenY = e.clientY - rect.top
+
+    const x = (screenX - this.panX) / this.zoom
+    const y = (screenY - this.panY) / this.zoom
     const width = x - this.startX
     const height = y - this.startY
 
@@ -260,8 +226,15 @@ export class Game {
   draw = (x: number, y: number) => {
     if (!this.ctx) return
 
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0)
+
     this.ctx.fillStyle = "#171717"
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
+
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0)
+
+    this.ctx.translate(this.panX, this.panY)
+    this.ctx.scale(this.zoom, this.zoom)
 
     allCanvas({
       Shapes: [...this.Shapes, ...this.remoteShapes],
@@ -306,11 +279,34 @@ export class Game {
 
     this.ctx.stroke()
   }
+  handleWheel = (e: WheelEvent) => {
+    e.preventDefault()
 
+    const oldZoom = this.zoom
+
+    if (e.deltaY < 0) {
+      this.zoom += 0.1
+    } else {
+      this.zoom -= 0.1
+    }
+
+    console.log("this is oldZoom", oldZoom)
+    this.zoom = Math.max(0.1, Math.min(this.zoom, 5))
+
+    const rect = this.canvas.getBoundingClientRect()
+
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
+
+    this.panX = mouseX - (mouseX - this.panX) * (this.zoom / oldZoom)
+    this.panY = mouseY - (mouseY - this.panY) * (this.zoom / oldZoom)
+
+    this.redraw()
+  }
   eventHandlers = () => {
     this.canvas.addEventListener("mousedown", this.mouseDownHandler)
     this.canvas.addEventListener("mousemove", this.mouseMovehandler)
     this.canvas.addEventListener("mouseup", this.mouseUpHandler)
-    this.canvas.addEventListener("wheel", this.mouseZoom)
+    this.canvas.addEventListener("wheel", this.handleWheel)
   }
 }
