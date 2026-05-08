@@ -15,7 +15,7 @@ export default function useSocket() {
       return
     }
 
-    const ws = new WebSocket(`ws://localhost:8080?token=${token}`)
+    const ws = new WebSocket(`ws://localhost:8081?token=${token}`)
 
     ws.onopen = () => {
       setConnected(true)

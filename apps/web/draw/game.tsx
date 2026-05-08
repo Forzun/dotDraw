@@ -51,6 +51,10 @@ export class Game {
   private strokeStyle: string
   private lineWidth: number
   private remoteShapes: Shape[] = []
+  private offsetX: number = 0
+  private offsetY: number = 0
+  private zoom: number = 1
+  private SCALE_FACTOR = 0.1
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -71,6 +75,7 @@ export class Game {
     this.lineWidth = 1
     this.loadInitialShapes()
     this.initSocket()
+    this.zoomDrow()
   }
 
   private initSocket() {
@@ -119,6 +124,47 @@ export class Game {
     this.canvas.removeEventListener("mousedown", this.mouseDownHandler)
     this.canvas.removeEventListener("mousemove", this.mouseMovehandler)
     this.canvas.removeEventListener("mouseup", this.mouseUpHandler)
+  }
+
+  mouseZoom = (e: WheelEvent) => {
+    e.preventDefault()
+
+    const rect = this.canvas.getBoundingClientRect()
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
+
+    const direction = e.deltaY > 0 ? -1 : 1
+    const zoomChange = direction * this.SCALE_FACTOR
+
+    const newZoom = Math.max(0.1, Math.min(this.zoom + zoomChange, 10))
+
+    const zoomDiff = newZoom - this.zoom
+
+    this.offsetX = mouseX - (mouseX - this.offsetX) * (newZoom / this.zoom)
+    this.offsetY = mouseY - (mouseY - this.offsetY) * (newZoom / this.zoom)
+
+    this.zoom = newZoom
+
+    this.zoomDrow()
+  }
+
+  zoomDrow() {
+    if (this.ctx == null) {
+      return
+    }
+
+    this.ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height)
+
+    // Reset transform
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0)
+
+    // Apply zoom and pan
+    this.ctx.translate(this.offsetX, this.offsetY)
+    this.ctx.scale(this.zoom, this.zoom)
+
+    // Draw content (example: a centered square)
+    this.ctx.fillStyle = "blue"
+    this.ctx.fillRect(-50, -50, 100, 100)
   }
 
   mouseDownHandler = (e: MouseEvent) => {
@@ -265,5 +311,6 @@ export class Game {
     this.canvas.addEventListener("mousedown", this.mouseDownHandler)
     this.canvas.addEventListener("mousemove", this.mouseMovehandler)
     this.canvas.addEventListener("mouseup", this.mouseUpHandler)
+    this.canvas.addEventListener("wheel", this.mouseZoom)
   }
 }

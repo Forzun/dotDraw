@@ -17,7 +17,7 @@ const users: User[] = []
 let allSocket: Record<string, { userId: string; ws: ServerWebSocket[] }> = {}
 
 const server = Bun.serve<WsData>({
-  port: 8080,
+  port: 8081,
   fetch(req, server) {
     const url = new URL(req.url)
     const token = url.searchParams.get("token")
