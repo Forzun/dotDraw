@@ -60,13 +60,25 @@ export default function DrowCanva({
   }, [currentShape])
 
   return (
-    <div className="relative h-screen w-full">
+    <div
+      className="relative h-screen w-full"
+      style={{
+        backgroundColor: "#1a1a18",
+        backgroundImage:
+          "radial-gradient(circle, #3a3935 1px, transparent 1px)",
+        backgroundSize: "24px 24px",
+      }}
+    >
       <ShapeToolbar
         shapes={shapes}
         currentShape={currentShape}
         setCurrentShape={setCurrentShape}
       />
-      <canvas ref={canvasRef}></canvas>
+      <canvas
+        className="absolute inset-0 h-full w-full"
+        style={{ background: "transparent" }}
+        ref={canvasRef}
+      ></canvas>
     </div>
   )
 }

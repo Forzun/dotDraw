@@ -75,15 +75,49 @@ export class Game {
     this.socket = socket
     this.ctx = this.canvas.getContext("2d")
     if (!this.ctx) return
-    this.ctx.fillStyle = "#171717"
-    this.ctx.fillRect(0, 0, canvas.width, canvas.height)
+    this.ctx.clearRect(0, 0, canvas.width, canvas.height)
     this.ctx.strokeStyle = "white"
     this.eventHandlers()
     this.lineWidth = 1
     this.loadInitialShapes()
     this.initSocket()
   }
+  drawSelection = (shape: Shape) => {
+    if (!this.ctx) return
+    const ctx = this.ctx
+    const padding = 10 / this.zoom
+    const radius = 8 / this.zoom
+    const handleRadius = 5 / this.zoom
+    const x = shape.x - padding
+    const y = shape.y - padding
+    const width = shape.width + padding * 2
+    const height = shape.height + padding * 2
 
+    // Selection rectangle
+    ctx.beginPath()
+    ctx.strokeStyle = "#6965db"
+    ctx.lineWidth = 1.5 / this.zoom
+    ctx.roundRect(x, y, width, height, radius)
+    ctx.stroke()
+
+    // Corner handles
+    const handles = [
+      { x, y }, // top-left
+      { x: x + width, y }, // top-right
+      { x, y: y + height }, // bottom-left
+      { x: x + width, y: y + height }, // bottom-right
+    ]
+
+    handles.forEach(({ x: hx, y: hy }) => {
+      ctx.beginPath()
+      ctx.arc(hx, hy, handleRadius, 0, Math.PI * 2)
+      ctx.fillStyle = "#ffffff"
+      ctx.fill()
+      ctx.strokeStyle = "#6965db"
+      ctx.lineWidth = 1.5 / this.zoom
+      ctx.stroke()
+    })
+  }
   private initSocket() {
     this.socket.addEventListener("message", (event) => {
       if (!this.ctx) {
@@ -111,9 +145,10 @@ export class Game {
     if (!this.ctx) return
 
     this.ctx.setTransform(1, 0, 0, 1, 0, 0)
-    this.ctx.fillStyle = "#171717"
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
+    // this.ctx.fillStyle = "#171717"
+    // this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
 
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
     this.ctx.translate(this.panX, this.panY)
     this.ctx.scale(this.zoom, this.zoom)
 
@@ -121,6 +156,10 @@ export class Game {
       Shapes: [...this.Shapes, ...this.remoteShapes],
       ctx: this.ctx,
     })
+
+    if (this.selectedShape) {
+      this.drawSelection(this.selectedShape)
+    }
 
     this.allShapes = [...this.Shapes, ...this.remoteShapes]
   }
