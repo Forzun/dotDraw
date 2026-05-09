@@ -2,6 +2,7 @@ import { ShapeType } from "@/types/shape-types"
 import allCanvas from "./getShaps"
 import renderSocket, { getExistingShape } from "./socketShaps"
 
+type actions = "drawing" | "dragging" | "resizing" | "none"
 export type Shape =
   | {
       type: "rect"
@@ -55,6 +56,12 @@ export class Game {
   private panX: number = 0
   private zoom: number = 1
   private SCALE_FACTOR = 0.1
+  private action: actions = "none"
+  private selectedShape: Shape | null = null
+  private shape: MouseEvent | null = null
+  private dragOffsetY: number | null = null
+  private dragOffsetX: number | null = null
+  private allShapes: Shape[] = []
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -114,6 +121,8 @@ export class Game {
       Shapes: [...this.Shapes, ...this.remoteShapes],
       ctx: this.ctx,
     })
+
+    this.allShapes = [...this.Shapes, ...this.remoteShapes]
   }
 
   setShape(shape: ShapeType) {
@@ -128,7 +137,6 @@ export class Game {
   }
 
   mouseDownHandler = (e: MouseEvent) => {
-    this.isDrowing = true
     const rect = this.canvas.getBoundingClientRect()
 
     const screenX = e.clientX - rect.left
@@ -139,7 +147,19 @@ export class Game {
 
     this.startX = x
     this.startY = y
+    this.shape = e
 
+    const clickedShape = this.getShapeAtPoint(x, y)
+
+    if (clickedShape) {
+      this.selectedShape = clickedShape
+      this.action = "dragging"
+      this.dragOffsetX = x - this.selectedShape.x
+      this.dragOffsetY = y - this.selectedShape.y
+      return
+    }
+
+    this.isDrowing = true
     if (this.shapeType === "rect") {
       this.currentShape = {
         type: "rect",
@@ -182,11 +202,13 @@ export class Game {
   }
 
   mouseUpHandler = (e: MouseEvent) => {
-    if (!this.isDrowing || this.currentShape == null) {
+    if (this.action === "dragging") {
+      this.selectedShape = null
+      this.action = "none"
       return
     }
 
-    if (!this.ctx) {
+    if (!this.isDrowing || this.currentShape == null || !this.ctx) {
       return
     }
 
@@ -205,9 +227,6 @@ export class Game {
   }
 
   mouseMovehandler = (e: MouseEvent) => {
-    if (!this.isDrowing || !this.currentShape) {
-      return
-    }
     const rect = this.canvas.getBoundingClientRect()
 
     const screenX = e.clientX - rect.left
@@ -217,6 +236,17 @@ export class Game {
     const y = (screenY - this.panY) / this.zoom
     const width = x - this.startX
     const height = y - this.startY
+
+    if (this.selectedShape && this.action == "dragging") {
+      this.selectedShape.x = x - this.dragOffsetX!
+      this.selectedShape.y = y - this.dragOffsetY!
+      this.redraw()
+      return
+    }
+
+    if (!this.isDrowing || !this.currentShape) {
+      return
+    }
 
     this.currentShape.width = width
     this.currentShape.height = height
@@ -303,6 +333,27 @@ export class Game {
 
     this.redraw()
   }
+
+  getShapeAtPoint = (x: number, y: number) => {
+    for (let i = this.allShapes.length - 1; i >= 0; i--) {
+      const shape = this.allShapes[i]
+
+      if (!shape) {
+        return
+      }
+
+      if (
+        x >= shape?.x &&
+        x <= shape.x + shape.width &&
+        y >= shape.y &&
+        y <= shape.y + shape.height
+      ) {
+        return shape
+      }
+    }
+    return null
+  }
+
   eventHandlers = () => {
     this.canvas.addEventListener("mousedown", this.mouseDownHandler)
     this.canvas.addEventListener("mousemove", this.mouseMovehandler)
