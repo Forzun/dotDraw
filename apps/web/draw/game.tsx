@@ -1,6 +1,7 @@
 import { ShapeType } from "@/types/shape-types"
 import allCanvas from "./getShaps"
 import renderSocket, { getExistingShape } from "./socketShaps"
+import { ChartCandlestick, CircleArrowLeft } from "lucide-react"
 
 type actions = "drawing" | "dragging" | "resizing" | "none"
 export type Shape =
@@ -62,6 +63,7 @@ export class Game {
   private dragOffsetY: number | null = null
   private dragOffsetX: number | null = null
   private allShapes: Shape[] = []
+  private resizeHandler: "tl" | "tr" | "bl" | "br" | null = null
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -190,6 +192,18 @@ export class Game {
 
     const clickedShape = this.getShapeAtPoint(x, y)
 
+    if (this.selectedShape) {
+      const handler = this.getResizeHandlePoint(x, y, this.selectedShape)
+
+      console.log("handler here: ", handler)
+
+      if (handler) {
+        this.resizeHandler = handler
+        this.action = "resizing"
+        return
+      }
+    }
+
     if (clickedShape) {
       this.selectedShape = clickedShape
       this.action = "dragging"
@@ -242,8 +256,13 @@ export class Game {
 
   mouseUpHandler = (e: MouseEvent) => {
     if (this.action === "dragging") {
-      this.selectedShape = null
       this.action = "none"
+      return
+    }
+
+    if (this.action == "resizing") {
+      this.action = "none"
+      this.resizeHandler = null
       return
     }
 
@@ -275,6 +294,47 @@ export class Game {
     const y = (screenY - this.panY) / this.zoom
     const width = x - this.startX
     const height = y - this.startY
+
+    if (this.selectedShape && this.action == "resizing") {
+      const originalX = this.selectedShape.x
+      const originalY = this.selectedShape.y
+      const originalWidth = this.selectedShape.width
+      const originalHeight = this.selectedShape.height
+
+      switch (this.resizeHandler) {
+        case "br":
+          this.selectedShape.width = x - originalX
+          this.selectedShape.height = y - originalY
+          break
+        case "tl":
+          this.selectedShape.width = originalWidth - (x - originalX)
+          this.selectedShape.height = originalHeight - (y - originalY)
+          this.selectedShape.x = x
+          this.selectedShape.y = y
+          break
+        case "tr":
+          this.selectedShape.width = x - originalX
+          this.selectedShape.height = originalHeight - (y - originalY)
+          this.selectedShape.y = y
+          break
+        case "bl":
+          this.selectedShape.width = originalWidth - (x - originalX)
+          this.selectedShape.height = y - originalY
+          this.selectedShape.x = x
+          break
+      }
+      if (this.selectedShape.width < 0) {
+        this.selectedShape.x += this.selectedShape.width
+        this.selectedShape.width = Math.abs(this.selectedShape.width)
+      }
+      if (this.selectedShape.height < 0) {
+        this.selectedShape.y += this.selectedShape.height
+        this.selectedShape.height = Math.abs(this.selectedShape.height)
+      }
+
+      this.redraw()
+      return
+    }
 
     if (this.selectedShape && this.action == "dragging") {
       this.selectedShape.x = x - this.dragOffsetX!
@@ -359,7 +419,6 @@ export class Game {
       this.zoom -= 0.1
     }
 
-    console.log("this is oldZoom", oldZoom)
     this.zoom = Math.max(0.1, Math.min(this.zoom, 5))
 
     const rect = this.canvas.getBoundingClientRect()
@@ -371,6 +430,61 @@ export class Game {
     this.panY = mouseY - (mouseY - this.panY) * (this.zoom / oldZoom)
 
     this.redraw()
+  }
+
+  getResizeHandlePoint = (x: number, y: number, shape: Shape) => {
+    const size = 10 / this.zoom
+    const padding = 10 / this.zoom
+
+    const tlx = shape.x - padding
+    const tly = shape.y - padding
+
+    const trx = shape.x + shape.width + padding
+    const tryy = shape.y - padding
+
+    const blx = shape.x - padding
+    const bly = shape.y + shape.height + padding
+
+    const brx = shape.x + shape.width + padding
+    const bry = shape.y + shape.height + padding
+
+    if (
+      x >= tlx - size / 2 &&
+      x <= tlx + size / 2 &&
+      y >= tly - size / 2 &&
+      y <= tly + size / 2
+    ) {
+      return "tl"
+    }
+
+    if (
+      x >= trx - size / 2 &&
+      x <= trx + size / 2 &&
+      y >= tryy - size / 2 &&
+      y <= tryy + size / 2
+    ) {
+      return "tr"
+    }
+
+    if (
+      x >= blx - size / 2 &&
+      x <= blx + size / 2 &&
+      y >= bly - size / 2 &&
+      y <= bly + size / 2
+    ) {
+      return "bl"
+    }
+
+    if (
+      x >= brx - size / 2 &&
+      x <= brx + size / 2 &&
+      y >= bry - size / 2 &&
+      y <= bry + size / 2
+    ) {
+      return "br"
+    }
+
+    return null
   }
 
   getShapeAtPoint = (x: number, y: number) => {
