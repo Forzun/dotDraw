@@ -1,3 +1,4 @@
+import { json } from "stream/consumers"
 import { Shape } from "./game"
 import allCanvas from "./getShaps"
 
@@ -24,6 +25,9 @@ export default async function renderSocket({
     const message = JSON.parse(event.data)
     if (message.type == "chat") {
       const parsed = JSON.parse(message.message)
+      if (!parsed) {
+        return
+      }
       console.log("shape pushed:", parsed.shape)
       remoteShapes.push(parsed.shape)
       allCanvas({
@@ -54,11 +58,11 @@ export async function getExistingShape(roomId: string) {
     const message = await response.json()
 
     const shapes = message.shapes.map((x: { shape: string }) => {
-      const shapesData = JSON.parse(x.shape)
-      return shapesData.shape
+      const parsed = JSON.parse(x.shape)
+      return parsed.shape
     })
 
-    console.log("get route ", shapes)
+    console.log(shapes)
     return shapes || []
   } catch (error) {
     console.log(error)

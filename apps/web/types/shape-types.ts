@@ -5,4 +5,5 @@ export type ShapeType =
   | "diamond"
   | "eraser"
   | "drow"
+  | "hand"
   | "default"

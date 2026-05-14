@@ -3,7 +3,6 @@ import { Router } from "express"
 import userMiddleware from "../middleware/user"
 import { RoomSchema } from "@repo/schema"
 import { prisma } from "@repo/database"
-import { sha } from "bun"
 
 const router = Router()
 

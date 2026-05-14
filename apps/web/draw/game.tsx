@@ -1,7 +1,6 @@
 import { ShapeType } from "@/types/shape-types"
 import allCanvas from "./getShaps"
 import renderSocket, { getExistingShape } from "./socketShaps"
-import { ChartCandlestick, CircleArrowLeft } from "lucide-react"
 
 type actions = "drawing" | "dragging" | "resizing" | "none"
 export type Shape =
@@ -64,6 +63,9 @@ export class Game {
   private dragOffsetX: number | null = null
   private allShapes: Shape[] = []
   private resizeHandler: "tl" | "tr" | "bl" | "br" | null = null
+  private isPanning: boolean = false
+  private lastPenX = 0
+  private lastPenY = 0
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -137,6 +139,7 @@ export class Game {
   private async loadInitialShapes() {
     const shapes = await getExistingShape(this.roomId)
 
+    console.log("shapes", shapes)
     if (shapes) {
       this.remoteShapes = shapes
     }
@@ -179,6 +182,13 @@ export class Game {
 
   mouseDownHandler = (e: MouseEvent) => {
     const rect = this.canvas.getBoundingClientRect()
+
+    if (this.shapeType == "hand") {
+      this.isPanning = true
+
+      this.lastPenX = e.clientX
+      this.lastPenY = e.clientY
+    }
 
     const screenX = e.clientX - rect.left
     const screenY = e.clientY - rect.top
@@ -255,6 +265,11 @@ export class Game {
   }
 
   mouseUpHandler = (e: MouseEvent) => {
+    if (this.shapeType === "hand") {
+      this.isPanning = false
+      return
+    }
+
     if (this.action === "dragging") {
       this.action = "none"
       return
@@ -286,6 +301,21 @@ export class Game {
 
   mouseMovehandler = (e: MouseEvent) => {
     const rect = this.canvas.getBoundingClientRect()
+
+    if (this.isPanning) {
+      const dx = e.clientX - this.lastPenX
+      const dy = e.clientY - this.lastPenY
+
+      this.panX += dx
+      this.panY += dy
+
+      this.lastPenX = e.clientX
+      this.lastPenY = e.clientY
+
+      this.redraw()
+      this.action = "none"
+      return
+    }
 
     const screenX = e.clientX - rect.left
     const screenY = e.clientY - rect.top

@@ -10,6 +10,7 @@ import {
   MousePointer,
   Pencil,
   Square,
+  Hand,
   type LucideIcon,
 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
@@ -28,6 +29,7 @@ const shapes: ShapeProps[] = [
   { type: "pencil", icon: Minus },
   { type: "drow", icon: Pencil },
   { type: "eraser", icon: Eraser },
+  { type: "hand", icon: Hand },
 ]
 
 export default function DrowCanva({
