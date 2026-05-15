@@ -1,7 +1,6 @@
 import { ShapeType } from "@/types/shape-types"
 import allCanvas from "./getShaps"
 import renderSocket, { getExistingShape } from "./socketShaps"
-import { i } from "motion/react-m"
 
 type actions = "drawing" | "dragging" | "resizing" | "none"
 export type Shape =
@@ -89,23 +88,42 @@ export class Game {
   }
   drawSelection = (shape: Shape) => {
     if (!this.ctx) return
+
     const ctx = this.ctx
+
     const padding = 10 / this.zoom
     const radius = 8 / this.zoom
     const handleRadius = 5 / this.zoom
-    const x = shape.x - padding
-    const y = shape.y - padding
-    const width = shape.width + padding * 2
-    const height = shape.height + padding * 2
 
-    // Selection rectangle
+    let x: number
+    let y: number
+    let width: number
+    let height: number
+
+    // Circle bounds
+    if (shape.type === "circle") {
+      x = shape.x - shape.radius - padding
+      y = shape.y - shape.radius - padding
+
+      width = shape.radius * 2 + padding * 2
+      height = shape.radius * 2 + padding * 4
+    } else {
+      // Rect / diamond / pencil
+      x = shape.x - padding
+      y = shape.y - padding
+
+      width = shape.width + padding * 2
+      height = shape.height + padding * 2
+    }
+
+    // Selection border
     ctx.beginPath()
     ctx.strokeStyle = "#6965db"
     ctx.lineWidth = 1.5 / this.zoom
     ctx.roundRect(x, y, width, height, radius)
     ctx.stroke()
 
-    // Corner handles
+    // Resize handles
     const handles = [
       { x, y }, // top-left
       { x: x + width, y }, // top-right
@@ -115,9 +133,12 @@ export class Game {
 
     handles.forEach(({ x: hx, y: hy }) => {
       ctx.beginPath()
+
       ctx.arc(hx, hy, handleRadius, 0, Math.PI * 2)
+
       ctx.fillStyle = "#ffffff"
       ctx.fill()
+
       ctx.strokeStyle = "#6965db"
       ctx.lineWidth = 1.5 / this.zoom
       ctx.stroke()
@@ -183,6 +204,7 @@ export class Game {
 
   mouseDownHandler = (e: MouseEvent) => {
     const rect = this.canvas.getBoundingClientRect()
+
     if (this.shapeType == "hand") {
       this.isPanning = true
 
@@ -203,9 +225,7 @@ export class Game {
     const clickedShape = this.getShapeAtPoint(x, y)
 
     if (this.shapeType == "eraser") {
-      if (clickedShape) {
-        this.Shapes = this.Shapes.filter((shape) => shape !== clickedShape)
-      }
+      this.Shapes = this.Shapes.filter((shape) => shape !== clickedShape)
 
       this.remoteShapes = this.remoteShapes.filter(
         (shape) => shape !== clickedShape
@@ -279,6 +299,10 @@ export class Game {
   mouseUpHandler = (e: MouseEvent) => {
     if (this.shapeType === "hand") {
       this.isPanning = false
+
+      this.lastPenX = e.clientX
+      this.lastPenY = e.clientY
+
       return
     }
 
@@ -343,6 +367,13 @@ export class Game {
       const originalWidth = this.selectedShape.width
       const originalHeight = this.selectedShape.height
 
+      if (this.selectedShape.type === "circle") {
+        const dx = x - this.selectedShape.x
+        const dy = y - this.selectedShape.y
+
+        this.selectedShape.radius = Math.sqrt(dx * dx + dy * dy)
+      }
+
       switch (this.resizeHandler) {
         case "br":
           this.selectedShape.width = x - originalX
@@ -399,7 +430,7 @@ export class Game {
 
     this.ctx.setTransform(1, 0, 0, 1, 0, 0)
 
-    this.ctx.fillStyle = "#171717"
+    this.ctx.fillStyle = "#171718"
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
 
     this.ctx.setTransform(1, 0, 0, 1, 0, 0)
