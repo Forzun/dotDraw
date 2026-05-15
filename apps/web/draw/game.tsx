@@ -1,6 +1,7 @@
 import { ShapeType } from "@/types/shape-types"
 import allCanvas from "./getShaps"
 import renderSocket, { getExistingShape } from "./socketShaps"
+import { i } from "motion/react-m"
 
 type actions = "drawing" | "dragging" | "resizing" | "none"
 export type Shape =
@@ -182,7 +183,6 @@ export class Game {
 
   mouseDownHandler = (e: MouseEvent) => {
     const rect = this.canvas.getBoundingClientRect()
-
     if (this.shapeType == "hand") {
       this.isPanning = true
 
@@ -201,6 +201,18 @@ export class Game {
     this.shape = e
 
     const clickedShape = this.getShapeAtPoint(x, y)
+
+    if (this.shapeType == "eraser") {
+      if (clickedShape) {
+        this.Shapes = this.Shapes.filter((shape) => shape !== clickedShape)
+      }
+
+      this.remoteShapes = this.remoteShapes.filter(
+        (shape) => shape !== clickedShape
+      )
+      this.redraw()
+      return
+    }
 
     if (this.selectedShape) {
       const handler = this.getResizeHandlePoint(x, y, this.selectedShape)
