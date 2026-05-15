@@ -568,6 +568,19 @@ export class Game {
         return
       }
 
+      if (shape.type === "circle") {
+        const dx = x - shape.x
+        const dy = y - shape.y
+
+        const distance = Math.sqrt(dx * dx + dy * dy)
+
+        if (distance <= shape.radius) {
+          return shape
+        }
+
+        continue
+      }
+
       if (
         x >= shape?.x &&
         x <= shape.x + shape.width &&
