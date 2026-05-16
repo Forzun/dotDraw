@@ -66,6 +66,9 @@ export class Game {
   private isPanning: boolean = false
   private lastPenX = 0
   private lastPenY = 0
+  private initialRadius = 0
+  private resizeStartRadius = 0
+  private resizeStartDistance = 0
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -106,7 +109,7 @@ export class Game {
       y = shape.y - shape.radius - padding
 
       width = shape.radius * 2 + padding * 2
-      height = shape.radius * 2 + padding * 4
+      height = shape.radius * 2 + padding * 2
     } else {
       // Rect / diamond / pencil
       x = shape.x - padding
@@ -144,6 +147,7 @@ export class Game {
       ctx.stroke()
     })
   }
+
   private initSocket() {
     this.socket.addEventListener("message", (event) => {
       if (!this.ctx) {
@@ -238,6 +242,15 @@ export class Game {
       const handler = this.getResizeHandlePoint(x, y, this.selectedShape)
 
       console.log("handler here: ", handler)
+
+      if (handler && this.selectedShape.type == "circle") {
+        const dx = x - this.selectedShape.x
+        const dy = y - this.selectedShape.y
+
+        this.resizeStartDistance = Math.sqrt(dx * dx + dy * dy)
+
+        this.initialRadius = this.selectedShape.radius
+      }
 
       if (handler) {
         this.resizeHandler = handler
@@ -371,7 +384,15 @@ export class Game {
         const dx = x - this.selectedShape.x
         const dy = y - this.selectedShape.y
 
-        this.selectedShape.radius = Math.sqrt(dx * dx + dy * dy)
+        const distance = Math.sqrt(dx * dx + dy * dy)
+        const radiusChange = distance - this.resizeStartDistance
+
+        this.selectedShape.radius = Math.max(
+          5,
+          this.initialRadius + radiusChange
+        )
+        this.redraw()
+        return
       }
 
       switch (this.resizeHandler) {
@@ -410,6 +431,14 @@ export class Game {
     }
 
     if (this.selectedShape && this.action == "dragging") {
+      if (this.selectedShape.type === "circle") {
+        this.selectedShape.x = y - this.dragOffsetX!
+        this.selectedShape.y = y - this.dragOffsetY!
+      } else {
+        this.selectedShape.x = y - this.dragOffsetX!
+        this.selectedShape.y = y - this.dragOffsetY!
+      }
+
       this.selectedShape.x = x - this.dragOffsetX!
       this.selectedShape.y = y - this.dragOffsetY!
       this.redraw()
@@ -505,21 +534,46 @@ export class Game {
     this.redraw()
   }
 
+  getShapeBounds(shape: Shape) {
+    if (shape.type === "circle") {
+      return {
+        x: shape.x - shape.radius,
+        y: shape.y - shape.radius,
+        width: shape.radius * 2,
+        height: shape.radius * 2,
+      }
+    }
+
+    return {
+      x: shape.x,
+      y: shape.y,
+      width: shape.width,
+      height: shape.height,
+    }
+  }
+
   getResizeHandlePoint = (x: number, y: number, shape: Shape) => {
     const size = 10 / this.zoom
     const padding = 10 / this.zoom
 
-    const tlx = shape.x - padding
-    const tly = shape.y - padding
+    const bounds = this.getShapeBounds(shape)
 
-    const trx = shape.x + shape.width + padding
-    const tryy = shape.y - padding
+    const shapeX: number = bounds.x
+    const shapeY: number = bounds.y
+    const shapeWidth: number = bounds.width
+    const ShapeHeight: number = bounds.height
 
-    const blx = shape.x - padding
-    const bly = shape.y + shape.height + padding
+    const tlx = shapeX - padding
+    const tly = shapeY - padding
 
-    const brx = shape.x + shape.width + padding
-    const bry = shape.y + shape.height + padding
+    const trx = shapeX + shapeWidth + padding
+    const tryy = shapeY - padding
+
+    const blx = shapeX - padding
+    const bly = shapeY + ShapeHeight + padding
+
+    const brx = shapeX + shapeWidth + padding
+    const bry = shapeY + ShapeHeight + padding
 
     if (
       x >= tlx - size / 2 &&
