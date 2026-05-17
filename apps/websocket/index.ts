@@ -86,17 +86,40 @@ const server = Bun.serve<WsData>({
             count: count,
           }
 
+          const parsedShape = JSON.parse(data.payload.message)
+          console.log("here:", parsedShape)
+
           const room = await prisma.room.findFirst({
             where: { slug: data.payload.roomId },
           })
 
-          await prisma.shape.create({
-            data: {
+          const existingShape = await prisma.shape.findFirst({
+            where: {
+              shapeId: parsedShape.shape.id,
+              roomId: room?.id,
               userId: userId,
-              shape: data.payload.message,
-              roomId: room?.id!,
             },
           })
+
+          if (existingShape !== null) {
+            await prisma.shape.update({
+              where: {
+                shapeId: parsedShape.shape.id,
+              },
+              data: {
+                shape: data.payload.message,
+              },
+            })
+          } else {
+            await prisma.shape.create({
+              data: {
+                shapeId: parsedShape.shape.id,
+                userId: userId,
+                shape: data.payload.message,
+                roomId: room?.id!,
+              },
+            })
+          }
 
           users
             .filter((user) => {

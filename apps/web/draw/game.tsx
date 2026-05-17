@@ -1,10 +1,15 @@
 import { ShapeType } from "@/types/shape-types"
 import allCanvas from "./getShaps"
 import renderSocket, { getExistingShape } from "./socketShaps"
+import { randomUUID } from "crypto"
 
 type actions = "drawing" | "dragging" | "resizing" | "none"
+type shapeId = {
+  id: typeof randomUUID
+}
 export type Shape =
   | {
+      id: string
       type: "rect"
       x: number
       y: number
@@ -12,6 +17,7 @@ export type Shape =
       height: number
     }
   | {
+      id: string
       type: "circle"
       radius: number
       x: number
@@ -20,6 +26,7 @@ export type Shape =
       height: number
     }
   | {
+      id: string
       type: "pencil"
       startX: number
       startY: number
@@ -29,6 +36,7 @@ export type Shape =
       height: number
     }
   | {
+      id: string
       type: "diamond"
       startX?: number
       startY?: number
@@ -103,7 +111,6 @@ export class Game {
     let width: number
     let height: number
 
-    // Circle bounds
     if (shape.type === "circle") {
       x = shape.x - shape.radius - padding
       y = shape.y - shape.radius - padding
@@ -111,7 +118,6 @@ export class Game {
       width = shape.radius * 2 + padding * 2
       height = shape.radius * 2 + padding * 2
     } else {
-      // Rect / diamond / pencil
       x = shape.x - padding
       y = shape.y - padding
 
@@ -119,14 +125,12 @@ export class Game {
       height = shape.height + padding * 2
     }
 
-    // Selection border
     ctx.beginPath()
     ctx.strokeStyle = "#6965db"
     ctx.lineWidth = 1.5 / this.zoom
     ctx.roundRect(x, y, width, height, radius)
     ctx.stroke()
 
-    // Resize handles
     const handles = [
       { x, y }, // top-left
       { x: x + width, y }, // top-right
@@ -153,7 +157,8 @@ export class Game {
       if (!this.ctx) {
         return
       }
-      const message = JSON.parse(event.data)
+      const parsedMessage = JSON.stringify(event.data)
+      const message = JSON.parse(parsedMessage)
       if (message.type == "chat") {
         const parsed = JSON.parse(message.message)
         this.remoteShapes.push(parsed.shape)
@@ -165,7 +170,6 @@ export class Game {
   private async loadInitialShapes() {
     const shapes = await getExistingShape(this.roomId)
 
-    console.log("shapes", shapes)
     if (shapes) {
       this.remoteShapes = shapes
     }
@@ -270,6 +274,7 @@ export class Game {
     this.isDrowing = true
     if (this.shapeType === "rect") {
       this.currentShape = {
+        id: crypto.randomUUID(),
         type: "rect",
         x: this.startX,
         y: this.startY,
@@ -279,6 +284,7 @@ export class Game {
     }
     if (this.shapeType === "circle") {
       this.currentShape = {
+        id: crypto.randomUUID(),
         type: "circle",
         x,
         y,
@@ -289,6 +295,7 @@ export class Game {
     }
     if (this.shapeType === "pencil") {
       this.currentShape = {
+        id: crypto.randomUUID(),
         type: "pencil",
         startX: x,
         startY: y,
@@ -300,6 +307,7 @@ export class Game {
     }
     if (this.shapeType === "diamond") {
       this.currentShape = {
+        id: crypto.randomUUID(),
         type: "diamond",
         x,
         y,
@@ -310,6 +318,21 @@ export class Game {
   }
 
   mouseUpHandler = (e: MouseEvent) => {
+    console.log("shape change with socket itself:", {
+      roomId: this.roomId,
+      shape: this.selectedShape,
+      ctx: this.ctx!,
+      socket: this.socket,
+      remoteShapes: this.remoteShapes,
+    })
+    renderSocket({
+      roomId: this.roomId,
+      shape: this.selectedShape!,
+      ctx: this.ctx!,
+      socket: this.socket,
+      remoteShapes: this.remoteShapes,
+    })
+
     if (this.shapeType === "hand") {
       this.isPanning = false
 
