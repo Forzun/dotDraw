@@ -7,3 +7,4 @@ export type ShapeType =
   | "drow"
   | "hand"
   | "default"
+  | "arrow"

@@ -45,6 +45,16 @@ export type Shape =
       width: number
       height: number
     }
+  | {
+      id: string
+      type: "arrow"
+      startX: number
+      startY: number
+      x: number
+      y: number
+      width: number
+      height: number
+    }
 
 export class Game {
   private canvas: HTMLCanvasElement
@@ -315,6 +325,18 @@ export class Game {
         height: 0,
       }
     }
+    if (this.shapeType === "arrow") {
+      this.currentShape = {
+        id: crypto.randomUUID(),
+        type: "arrow",
+        startX: x,
+        startY: y,
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+      }
+    }
   }
 
   mouseUpHandler = (e: MouseEvent) => {
@@ -529,6 +551,33 @@ export class Game {
       this.ctx.lineTo(this.startX + width / 2, this.startY + height)
       this.ctx.lineTo(this.startX, this.startY + height / 2)
       this.ctx.closePath()
+    } else if (this.currentShape.type === "arrow") {
+      const headLength = 15 // Length of the arrowhead in pixels
+      const dx = x - this.currentShape.startX
+      const dy = y - this.currentShape.startY
+      const angle = Math.atan2(dy, dx)
+
+      this.ctx.beginPath()
+      this.ctx.moveTo(this.startX, this.startY)
+      this.ctx.lineTo(x, y)
+      this.ctx.stroke()
+
+      this.currentShape.x = x
+      this.currentShape.y = y
+
+      this.ctx.beginPath()
+      this.ctx.moveTo(x, y)
+      this.ctx.lineTo(
+        x - headLength * Math.cos(angle - Math.PI / 6),
+        y - headLength * Math.sin(angle - Math.PI / 6)
+      )
+      this.ctx.lineTo(
+        x - headLength * Math.cos(angle + Math.PI / 6),
+        y - headLength * Math.sin(angle + Math.PI / 6)
+      )
+
+      this.ctx.closePath()
+      this.ctx.fill()
     }
 
     this.ctx.stroke()

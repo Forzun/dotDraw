@@ -12,6 +12,7 @@ import {
   Square,
   Hand,
   type LucideIcon,
+  ArrowUpFromDot,
 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "motion/react"
@@ -30,6 +31,7 @@ const shapes: ShapeProps[] = [
   { type: "drow", icon: Pencil },
   { type: "eraser", icon: Eraser },
   { type: "hand", icon: Hand },
+  { type: "arrow", icon: ArrowUpFromDot },
 ]
 
 export default function DrowCanva({
